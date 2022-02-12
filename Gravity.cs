@@ -3,12 +3,14 @@ using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Gravity
 {
     class Gravity
     {
         // Object masses
+        static double mass1 = 0f;
         static double mass2 = 0f;
 
         // Gravitatonal constant
@@ -20,25 +22,22 @@ namespace Gravity
         // Position for object 1
         double x1 = 0;
         double y1 = 0;
+
         double velocityX = 0;
         double velocityY = 0;
 
+        double velocityX2 = 0;
+        double velocityY2 = 0;
+
         // Set position for object 2
-        static double x2 = 0;
-        static double y2 = 0;
+        double x2 = 0;
+        double y2 = 0;
 
         double[] dataX;
         double[] dataY;
 
-        static double[] ToPolar(double x, double y)
-        {
-            // Converts { x, y } vectors into { r, theta } vectors
-            double[] rtheta = {
-                Math.Sqrt(Math.Pow(x, 2) + Math.Pow(y, 2)),
-                Math.Atan(y / x) };
-
-            return rtheta;
-        }
+        double[] dataX2;
+        double[] dataY2;
 
         static double[] ToCart(double r, double theta)
         {
@@ -61,10 +60,10 @@ namespace Gravity
             return Math.Sqrt(Math.Pow(x2 - x1, 2) + Math.Pow(y2 - y1, 2));
         }
 
-        static double Acceleration(double distance)
+        static double Force(double distance)
         {
-            // Acceleration due to gravity; v = G(m2 / r^2)
-            return ((G * mass2) / Math.Pow(distance, 2));
+            // Force due to gravity; F = G(m1m2/r^2)
+            return G * mass1 * mass2 / Math.Pow(distance, 2);
         }
 
         static double AngleBetween(double y1, double y2, double x1, double x2)
@@ -75,26 +74,25 @@ namespace Gravity
 
             return angle;
         }
-        void InitCalc()
+
+        async void MainCalc(int i)
         {
             double distance = DistanceFormula(x1, x2, y1, y2);
-            double deltaVelocity = Acceleration(distance) * timeStep;
             double angle = AngleBetween(y1, y2, x1, x2);
+            double angle2 = angle - (Math.PI);
+            double force = Force(distance);
 
-            double[] convVelocity = ToCart(deltaVelocity, angle);
+            Task<bool> calc1 = MainCalc1(i, force, angle);
+            Task<bool> calc2 = MainCalc2(i, force, angle2);
 
-            Console.WriteLine(String.Format("d = {0}, angle = {1}, velocityX = {2}, velocityY = {3}, velX = {4}, velY = {5}, x = {6}, y = {7}", Math.Round(distance).ToString(), (angle * (180 / Math.PI)).ToString(), Math.Round(velocityX), Math.Round(velocityY), Math.Round(convVelocity[0]), Math.Round(convVelocity[1]), Math.Round(x1), Math.Round(y1)));
+            await Task.WhenAll(calc1, calc2);
         }
 
-        void MainCalc(int i)
+        Task<bool> MainCalc1(int i, double force, double angle)
         {
             // Handles all required calculations to return a final { x, y } displacement
 
-            double distance = DistanceFormula(x1, x2, y1, y2);
-            double deltaVelocity = Acceleration(distance) * timeStep;
-            double angle = AngleBetween(y1, y2, x1, x2);
-
-            double[] convVelocity = ToCart(deltaVelocity, angle);
+            double[] convVelocity = ToCart((force/mass1) * timeStep, angle);
 
             velocityX += convVelocity[0];
             velocityY += convVelocity[1];
@@ -105,10 +103,33 @@ namespace Gravity
             x1 = newVectorX;
             y1 = newVectorY;
 
-            Console.WriteLine(String.Format("d = {0}, angle = {1}, velocityX = {2}, velocityY = {3}, velX = {4}, velY = {5}, x = {6}, y = {7}, ({8})", Math.Round(distance).ToString(), (angle * (180 / Math.PI)).ToString(), Math.Round(velocityX), Math.Round(velocityY), Math.Round(convVelocity[0]), Math.Round(convVelocity[1]), Math.Round(x1), Math.Round(y1), i));
+            Console.WriteLine(String.Format("1) d = {0}, angle = {1}, velocityX = {2}, velocityY = {3}, velX = {4}, velY = {5}, x = {6}, y = {7}, ({8})\n", Math.Round(1.0).ToString(), (angle * (180 / Math.PI)).ToString(), Math.Round(velocityX), Math.Round(velocityY), Math.Round(convVelocity[0]), Math.Round(convVelocity[1]), Math.Round(x1), Math.Round(y1), i));
 
             dataX[i] = x1;
             dataY[i] = y1;
+
+            return Task.FromResult(true);
+        }
+        Task<bool> MainCalc2(int i, double force, double angle)
+        {
+            // Handles all required calculations to return a final { x, y } displacement
+            double[] convVelocity = ToCart((force / mass2) * timeStep, angle);
+
+
+            velocityX2 += convVelocity[0];
+            velocityY2 += convVelocity[1];
+
+            double newVectorX = x2 + (velocityX2 * timeStep);
+            double newVectorY = y2 + (velocityY2 * timeStep);
+
+            x2 = newVectorX;
+            y2 = newVectorY;
+
+            Console.WriteLine(String.Format("2) d = {0}, angle = {1}, velocityX = {2}, velocityY = {3}, velX = {4}, velY = {5}, x = {6}, y = {7}, ({8})", Math.Round(1.0).ToString(), (angle * (180 / Math.PI)).ToString(), Math.Round(velocityX), Math.Round(velocityY), Math.Round(convVelocity[0]), Math.Round(convVelocity[1]), Math.Round(x1), Math.Round(y1), i));
+
+            dataX2[i] = x2;
+            dataY2[i] = y2;
+            return Task.FromResult(true);
         }
         public void DeclareVariables()
         {
@@ -116,22 +137,32 @@ namespace Gravity
 
             timeStep = Double.Parse(config.Get("TimeStep"));
             repeats = int.Parse(config.Get("Repeats"));
+
+            mass1 = double.Parse(config.Get("Mass1"));
+            mass2 = double.Parse(config.Get("Mass2"));
+
             x1 = double.Parse(config.Get("X1"));
             y1 = double.Parse(config.Get("Y1"));
+
             x2 = double.Parse(config.Get("X2"));
             y2 = double.Parse(config.Get("Y2"));
+
             velocityX = double.Parse(config.Get("InitVelocityX"));
             velocityY = double.Parse(config.Get("InitVelocityY"));
-            mass2 = double.Parse(config.Get("Mass"));
+
+            velocityX2 = double.Parse(config.Get("InitVelocityX2"));
+            velocityY2 = double.Parse(config.Get("InitVelocityY2"));
 
             // Used for storing the entire session's x and y coordinates to draw a graph
             dataX = new double[repeats];
             dataY = new double[repeats];
+
+            dataX2 = new double[repeats];
+            dataY2 = new double[repeats];
         }
 
-        public void MainLoop()
+        public void MainLoop() 
         {
-            InitCalc();
 
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -153,6 +184,7 @@ namespace Gravity
 
             var plt = new ScottPlot.Plot(1920, 1920);
             plt.AddScatter(dataX, dataY);
+            plt.AddScatter(dataX2, dataY2);
             plt.SaveFig("DisplacementGraph.png");
 
             var directory = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
