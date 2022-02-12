@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Configuration;
 using System.Diagnostics;
-using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -49,11 +48,6 @@ namespace Gravity
             return xy;
         }
 
-        static double VectorAddition(double a, double b, double C)
-        {
-            // Calculates Vector Addition via the Cosine rule sqrt((a^2 + b^2 - 2ac * Cos(C)).
-            return Math.Sqrt(Math.Pow(a, 2) + Math.Pow(b, 2) - (2 * a * b * Math.Cos(C)));
-        }
         static double DistanceFormula(double x1, double x2, double y1, double y2)
         {
             // Calculated the distance in cartesian coordinates via the following formula: sqrt( (x2-x1)^2 + (y2-y1)^2 )
@@ -75,24 +69,28 @@ namespace Gravity
             return angle;
         }
 
-        async void MainCalc(int i)
+        async void MainCalc()
         {
-            double distance = DistanceFormula(x1, x2, y1, y2);
-            double angle = AngleBetween(y1, y2, x1, x2);
-            double angle2 = angle - (Math.PI);
-            double force = Force(distance);
+            for (int i = 0; i < repeats; i++)
+            {
+                double distance = DistanceFormula(x1, x2, y1, y2);
+                double angle = AngleBetween(y1, y2, x1, x2);
+                double angle2 = angle - (Math.PI);
+                double force = Force(distance);
 
-            Task<bool> calc1 = MainCalc1(i, force, angle);
-            Task<bool> calc2 = MainCalc2(i, force, angle2);
+                Task<bool> calc1 = MainCalc1(i, force, angle);
+                Task<bool> calc2 = MainCalc2(i, force, angle2);
 
-            await Task.WhenAll(calc1, calc2);
+                await Task.WhenAll(calc1, calc2);
+            }
         }
 
         Task<bool> MainCalc1(int i, double force, double angle)
         {
-            // Handles all required calculations to return a final { x, y } displacement
+            // Handles all required calculations to return a final { x1, y1 } displacement
 
-            double[] convVelocity = ToCart((force/mass1) * timeStep, angle);
+            double magnitude = (force / mass1) * timeStep;
+            double[] convVelocity = ToCart(magnitude, angle);
 
             velocityX += convVelocity[0];
             velocityY += convVelocity[1];
@@ -103,7 +101,15 @@ namespace Gravity
             x1 = newVectorX;
             y1 = newVectorY;
 
-            Console.WriteLine(String.Format("1) d = {0}, angle = {1}, velocityX = {2}, velocityY = {3}, velX = {4}, velY = {5}, x = {6}, y = {7}, ({8})\n", Math.Round(1.0).ToString(), (angle * (180 / Math.PI)).ToString(), Math.Round(velocityX), Math.Round(velocityY), Math.Round(convVelocity[0]), Math.Round(convVelocity[1]), Math.Round(x1), Math.Round(y1), i));
+            Console.WriteLine(String.Format("1) d = {0}, angle = {1}, velocityX = {2}, velocityY = {3}, velX = {4}, velY = {5}, x = {6}, y = {7}, ({8})\n", 
+                Math.Round(1.0).ToString(), 
+                (angle * (180 / Math.PI)).ToString(), 
+                Math.Round(velocityX), 
+                Math.Round(velocityY), 
+                Math.Round(convVelocity[0]),
+                Math.Round(convVelocity[1]), 
+                Math.Round(x1), 
+                Math.Round(y1), i));
 
             dataX[i] = x1;
             dataY[i] = y1;
@@ -112,9 +118,10 @@ namespace Gravity
         }
         Task<bool> MainCalc2(int i, double force, double angle)
         {
-            // Handles all required calculations to return a final { x, y } displacement
-            double[] convVelocity = ToCart((force / mass2) * timeStep, angle);
+            // Handles all required calculations to return a final { x2, y2 } displacement
 
+            double magnitude = (force / mass2) * timeStep;
+            double[] convVelocity = ToCart(magnitude, angle);
 
             velocityX2 += convVelocity[0];
             velocityY2 += convVelocity[1];
@@ -125,7 +132,15 @@ namespace Gravity
             x2 = newVectorX;
             y2 = newVectorY;
 
-            Console.WriteLine(String.Format("2) d = {0}, angle = {1}, velocityX = {2}, velocityY = {3}, velX = {4}, velY = {5}, x = {6}, y = {7}, ({8})", Math.Round(1.0).ToString(), (angle * (180 / Math.PI)).ToString(), Math.Round(velocityX), Math.Round(velocityY), Math.Round(convVelocity[0]), Math.Round(convVelocity[1]), Math.Round(x1), Math.Round(y1), i));
+            Console.WriteLine(String.Format("2) d = {0}, angle = {1}, velocityX = {2}, velocityY = {3}, velX = {4}, velY = {5}, x = {6}, y = {7}, ({8})", 
+                Math.Round(1.0).ToString(), 
+                (angle * (180 / Math.PI)).ToString(), 
+                Math.Round(velocityX), 
+                Math.Round(velocityY), 
+                Math.Round(convVelocity[0]), 
+                Math.Round(convVelocity[1]), 
+                Math.Round(x1), 
+                Math.Round(y1), i));
 
             dataX2[i] = x2;
             dataY2[i] = y2;
@@ -133,6 +148,7 @@ namespace Gravity
         }
         public void DeclareVariables()
         {
+            // This grabs all the variables from the external config file and stores them as their corrosponding variables so the code doesn't need to be modified for number changes
             var config = ConfigurationManager.AppSettings;
 
             timeStep = Double.Parse(config.Get("TimeStep"));
@@ -164,23 +180,7 @@ namespace Gravity
         public void MainLoop() 
         {
 
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-            for (int i = 0; i < repeats; i++)
-            {
-                MainCalc(i);
-            }
-            stopwatch.Stop();
-            Console.WriteLine(stopwatch.ElapsedMilliseconds);
-
-            string[] fileLines = new string[repeats];
-
-            for (int i = 0; i < repeats; i++)
-            {
-                fileLines[i] = dataX[i].ToString() + " " + dataY[i].ToString();
-            }
-
-            File.WriteAllLines("gravity.txt", fileLines);
+            MainCalc();
 
             var plt = new ScottPlot.Plot(1920, 1920);
             plt.AddScatter(dataX, dataY);
