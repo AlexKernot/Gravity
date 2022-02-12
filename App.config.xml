@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+	<appSettings>
+		<add key="Repeats" value="1000" />
+		<add key="X1" value="384000" />
+		<add key="Y1" value="384000" />
+		<add key="X2" value="0" />
+		<add key="Y2" value="0" />
+		<add key="InitVelocityX" value="10000" />
+		<add key="InitVelocityY" value="0" />
+		<add key="TimeStep" value="0.1" />
+		<add key="Mass1" value="7347673090000000000000" />
+		<add key="Mass2" value="5972190000000000000000000" />
+	</appSettings>
+</configuration>
