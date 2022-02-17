@@ -87,8 +87,8 @@ namespace Gravity
         {
             double dotProduct = DotProduct(x1, x2, y1, y2);
 
-            double magU = Magnitude(x1, x2);
-            double magV = Magnitude(y1, y2);
+            double magU = Magnitude(x1, y1);
+            double magV = Magnitude(x2, y2);
 
             double angle = dotProduct / (magU * magV);
 
