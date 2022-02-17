@@ -63,7 +63,11 @@ namespace Gravity
         {
             double a = Math.Sqrt((Math.Pow(b, 2) * Math.Pow(c, 2)) - (2 * b * c * Math.Cos(theta)));
 
-            double A = Math.Acos((Math.Pow(b, 2) + Math.Pow(c, 2) - Math.Pow(a, 2)) / (2 * b * c));
+            double cosA = (Math.Pow(b, 2) + Math.Pow(c, 2) - Math.Pow(a, 2)) / (2 * b * c);
+            if (cosA > 1) 
+                cosA -= 2;
+
+            double A = Math.Acos(cosA);
 
             double[] magTheta = { a, A };
 
@@ -87,8 +91,8 @@ namespace Gravity
         {
             double dotProduct = DotProduct(x1, x2, y1, y2);
 
-            double magU = Magnitude(x1, x2);
-            double magV = Magnitude(y1, y2);
+            double magU = Magnitude(x1, y1);
+            double magV = Magnitude(x2, y2);
 
             double angle = dotProduct / (magU * magV);
 
@@ -156,7 +160,7 @@ namespace Gravity
             x1 = newVectorX;
             y1 = newVectorY;
 
-            Console.WriteLine(String.Format("2) d = {0}, angle = {1}, velocityX = {2}, velocityY = {3}, velX = {4}, velY = {5}, x = {6}, y = {7}, ({8})\n", 
+            Console.WriteLine(String.Format("1) d = {0}, angle = {1}, velocityX = {2}, velocityY = {3}, velX = {4}, velY = {5}, x = {6}, y = {7}, ({8})\n", 
                 Math.Round(distance1).ToString(), 
                 (angle * (180 / Math.PI)).ToString(), 
                 Math.Round(velocityX), 
@@ -192,7 +196,7 @@ namespace Gravity
             x2 = newVectorX;
             y2 = newVectorY;
 
-            Console.WriteLine(String.Format("3) d = {0}, angle = {1}, velocityX = {2}, velocityY = {3}, velX = {4}, velY = {5}, x = {6}, y = {7}, ({8})\n",
+            Console.WriteLine(String.Format("2) d = {0}, angle = {1}, velocityX = {2}, velocityY = {3}, velX = {4}, velY = {5}, x = {6}, y = {7}, ({8})\n",
                 Math.Round(distance1).ToString(),
                 (angle * (180 / Math.PI)).ToString(),
                 Math.Round(velocityX2),
@@ -228,7 +232,7 @@ namespace Gravity
             x3 = newVectorX;
             y3 = newVectorY;
 
-            Console.WriteLine(String.Format("1) d = {0}, angle = {1}, velocityX = {2}, velocityY = {3}, velX = {4}, velY = {5}, x = {6}, y = {7}, ({8})\n",
+            Console.WriteLine(String.Format("3) d = {0}, angle = {1}, velocityX = {2}, velocityY = {3}, velX = {4}, velY = {5}, x = {6}, y = {7}, ({8})\n",
                 Math.Round(distance1).ToString(),
                 (angle * (180 / Math.PI)).ToString(),
                 Math.Round(velocityX3),
@@ -283,6 +287,8 @@ namespace Gravity
 
             dataX3 = new double[repeats];
             dataY3 = new double[repeats];
+
+            Console.WriteLine(x1);
         }
 
         public void Main2() 
