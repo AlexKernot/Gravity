@@ -59,19 +59,19 @@ namespace Gravity
 
             return xy;
         }
-        static double VectorAddition (double b, double c, double theta)
+        static double VectorAddition(double b, double c, double theta)
         {
             double a = Math.Sqrt((Math.Pow(b, 2) * Math.Pow(c, 2)) - (2 * b * c * Math.Cos(theta)));
 
             return a;
         }
 
-        static double Magnitude (double a, double b)
+        static double Magnitude(double a, double b)
         {
             return Math.Sqrt(Math.Pow(a, 2) + Math.Pow(b, 2));
         }
 
-        static double DotProduct (double u1, double u2, double v1, double v2)
+        static double DotProduct(double u1, double u2, double v1, double v2)
         {
 
             double dotProduct = ((u1 * v1) + (u2 * v2));
@@ -100,7 +100,7 @@ namespace Gravity
         {
             double acc1 = G * (mass1 / Math.Pow(distance1, 2));
             double acc2 = G * (mass2 / Math.Pow(distance2, 2));
-            
+
             double angle = AngleVector(u1, u2, v1, v2);
 
             double acc = VectorAddition(acc1, acc2, angle);
@@ -232,30 +232,174 @@ namespace Gravity
             // This grabs all the variables from the external config file and stores them as their corrosponding variables so the code doesn't need to be modified for number changes
             var config = ConfigurationManager.AppSettings;
 
-            timeStep = Double.Parse(config.Get("TimeStep"));
-            repeats = int.Parse(config.Get("Repeats"));
+            try
+            {
+                timeStep = Double.Parse(config.Get("TimeStep"));
+            } catch (Exception)
+            {
+                Console.WriteLine("There was an error with variable 'TimeStep'");
+                throw;
+            }
 
-            mass1 = double.Parse(config.Get("Mass1"));
-            mass2 = double.Parse(config.Get("Mass2"));
-            mass3 = double.Parse(config.Get("Mass3"));
+            try
+            {
+                repeats = int.Parse(config.Get("Repeats"));
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("There was an error with variable 'Repeats'");
+                throw;
+            }
 
-            x1 = double.Parse(config.Get("X1"));
-            y1 = double.Parse(config.Get("Y1"));
+            try
+            {
+                mass1 = Double.Parse(config.Get("Mass1"));
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("There was an error with variable 'Mass1'");
+                throw;
+            }
 
-            x2 = double.Parse(config.Get("X2"));
-            y2 = double.Parse(config.Get("Y2"));
+            try
+            {
+                mass2 = Double.Parse(config.Get("Mass2"));
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("There was an error with variable 'Mass2'");
+                throw;
+            }
 
-            x3 = double.Parse(config.Get("X3"));
-            y3 = double.Parse(config.Get("Y3"));
+            try
+            {
+                mass3 = Double.Parse(config.Get("Mass3"));
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("There was an error with variable 'mass3'");
+                throw;
+            }
 
-            velocityX = double.Parse(config.Get("InitVelocityX"));
-            velocityY = double.Parse(config.Get("InitVelocityY"));
+            try
+            {
+                x1 = Double.Parse(config.Get("X1"));
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("There was an error with variable 'X1'");
+                throw;
+            }
 
-            velocityX2 = double.Parse(config.Get("InitVelocityX2"));
-            velocityY2 = double.Parse(config.Get("InitVelocityY2"));
+            try
+            {
+                y1 = Double.Parse(config.Get("Y1"));
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("There was an error with variable 'Y1'");
+                throw;
+            }
 
-            velocityX3 = double.Parse(config.Get("InitVelocityX3"));
-            velocityY3 = double.Parse(config.Get("InitVelocityY3"));
+            try
+            {
+                x2 = Double.Parse(config.Get("X2"));
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("There was an error with variable 'X2'");
+                throw;
+            }
+
+            try
+            {
+                y2 = Double.Parse(config.Get("Y2"));
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("There was an error with variable 'Y2'");
+                throw;
+            }
+
+            try
+            {
+                x3 = Double.Parse(config.Get("X3"));
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("There was an error with variable 'X3'");
+                throw;
+            }
+
+            try
+            {
+                y3 = Double.Parse(config.Get("Y3"));
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("There was an error with variable 'Y3'");
+                throw;
+            }
+
+            try
+            {
+                velocityX = Double.Parse(config.Get("InitVelocityX"));
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("There was an error with variable 'InitVelocityX'");
+                throw;
+            }
+
+            try
+            {
+                velocityY = Double.Parse(config.Get("InitVelocityY"));
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("There was an error with variable 'InitVelocityY'");
+                throw;
+            }
+
+            try
+            {
+                velocityX2 = Double.Parse(config.Get("InitVelocityX2"));
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("There was an error with variable 'InitVelocityX2'");
+                throw;
+            }
+
+            try
+            {
+                velocityY2 = Double.Parse(config.Get("InitVelocityY2"));
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("There was an error with variable 'InitVelocityY2'");
+                throw;
+            }
+
+            try
+            {
+                velocityX3 = Double.Parse(config.Get("InitVelocityX3"));
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("There was an error with variable 'InitVelocityX3'");
+                throw;
+            }
+
+            try
+            {
+                mass1 = Double.Parse(config.Get("InitVelocityY3"));
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("There was an error with variable 'InitVelocityY3'");
+                throw;
+            }
 
             // Used for storing the entire session's x and y coordinates to draw a graph
             dataX = new double[repeats];
@@ -266,8 +410,6 @@ namespace Gravity
 
             dataX3 = new double[repeats];
             dataY3 = new double[repeats];
-
-            Console.WriteLine(x1);
         }
 
         public void Main2() 
