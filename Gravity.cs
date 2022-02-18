@@ -59,19 +59,11 @@ namespace Gravity
 
             return xy;
         }
-        static double[] VectorAddition (double b, double c, double theta)
+        static double VectorAddition (double b, double c, double theta)
         {
             double a = Math.Sqrt((Math.Pow(b, 2) * Math.Pow(c, 2)) - (2 * b * c * Math.Cos(theta)));
 
-            double cosA = (Math.Pow(b, 2) + Math.Pow(c, 2) - Math.Pow(a, 2)) / (2 * b * c);
-            if (cosA > 1) 
-                cosA -= 2;
-
-            double A = Math.Acos(cosA);
-
-            double[] magTheta = { a, A };
-
-            return magTheta;
+            return a;
         }
 
         static double Magnitude (double a, double b)
@@ -89,46 +81,38 @@ namespace Gravity
 
         static double AngleVector(double x1, double y1, double x2, double y2)
         {
-            double dotProduct = DotProduct(x1, x2, y1, y2);
+            double dotProduct = DotProduct(x1, y1, x2, y2);
 
             double magU = Magnitude(x1, y1);
             double magV = Magnitude(x2, y2);
 
-            double angle = dotProduct / (magU * magV);
+            double angle = Math.Acos(dotProduct / (magU * magV));
 
             return angle;
         }
-        static double DistanceFormula(double u1, double u2, double v1, double v2)
+        static double DistanceFormula(double x1, double y1, double x2, double y2)
         {
             // Calculated the distance in cartesian coordinates via the following formula: sqrt( (x2-x1)^2 + (y2-y1)^2 )
-            return Math.Sqrt(Math.Pow(u2 - u1, 2) + Math.Pow(v2 - v1, 2));
+            return Math.Sqrt(Math.Pow(x2 - x1, 2) + Math.Pow(y2 - y1, 2));
         }
 
-        static double Force(double distance)
-        {
-            // Force due to gravity; F = G(m1m2/r^2)
-            return G * mass1 * mass2 / Math.Pow(distance, 2);
-        }
-        static double[] Acceleration(double distance1, double distance2, double mass1, double mass2, double u1, double u2, double v1, double v2)
+        static double[] Acceleration(double distance1, double distance2, double mass1, double mass2, double u1, double u2, double v1, double v2, double w1, double w2)
         {
             double acc1 = G * (mass1 / Math.Pow(distance1, 2));
             double acc2 = G * (mass2 / Math.Pow(distance2, 2));
+            
             double angle = AngleVector(u1, u2, v1, v2);
-            double[] acc = VectorAddition(acc1, acc2, angle);
 
-            return acc;
+            double acc = VectorAddition(acc1, acc2, angle);
+
+            double[] convVelocity = ToCart(acc, angle);
+
+            double[] returns = { convVelocity[0], convVelocity[1], angle };
+
+            return returns;
         }
 
-        static double AngleBetween(double y1, double y2, double x1, double x2)
-        {
-            // Returns the angle between the the two objects
-            double angle = (Math.Atan2(y2 - y1, x2 - x1) + 2* Math.PI);
-
-
-            return angle;
-        }
-
-        async void MainLoop()
+        async Task<bool> MainLoop()
         {
             for (int i = 0; i < repeats; i++)
             {
@@ -138,21 +122,20 @@ namespace Gravity
 
                 await Task.WhenAll(calc1, calc2, calc3);
             }
-        }
 
+            return true;
+        }
         Task<bool> MainCalc1(int i)
         {
             // Handles all required calculations to return a final { x1, y1 } displacement
 
-            double distance1 = DistanceFormula(x1, x2, y1, y2);
-            double distance2 = DistanceFormula(x1, x3, y1, y3);
+            double distance1 = DistanceFormula(x1, y1, x2, y2);
+            double distance2 = DistanceFormula(x1, y1, x3, y3);
 
-            double[] acc = Acceleration(distance1, distance2, mass2, mass3, x2, x3, y2, y3);
-            double angle = acc[1];
-            double[] convVelocity = ToCart(acc[0], acc[1]);
+            double[] acc = Acceleration(distance1, distance2, mass2, mass3, x2, y2, x3, y3, x1, y1);
 
-            velocityX += convVelocity[0];
-            velocityY += convVelocity[1];
+            velocityX += acc[0];
+            velocityY += acc[1];
 
             double newVectorX = x1 + (velocityX * timeStep);
             double newVectorY = y1 + (velocityY * timeStep);
@@ -160,14 +143,14 @@ namespace Gravity
             x1 = newVectorX;
             y1 = newVectorY;
 
-            Console.WriteLine(String.Format("1) d = {0}, angle = {1}, velocityX = {2}, velocityY = {3}, velX = {4}, velY = {5}, x = {6}, y = {7}, ({8})\n", 
-                Math.Round(distance1).ToString(), 
-                (angle * (180 / Math.PI)).ToString(), 
-                Math.Round(velocityX), 
-                Math.Round(velocityY), 
-                Math.Round(convVelocity[0]),
-                Math.Round(convVelocity[1]), 
-                Math.Round(x1), 
+            Console.WriteLine(String.Format("1) d = {0}, angle = {1}, velocityX = {2}, velocityY = {3}, velX = {4}, velY = {5}, x = {6}, y = {7}, ({8})\n",
+                Math.Round(distance1).ToString(),
+                (acc[2] * (180 / Math.PI)).ToString(),
+                Math.Round(velocityX),
+                Math.Round(velocityY),
+                Math.Round(acc[0]),
+                Math.Round(acc[1]),
+                Math.Round(x1),
                 Math.Round(y1), i));
 
             dataX[i] = x1;
@@ -180,15 +163,13 @@ namespace Gravity
         {
             // Handles all required calculations to return a final { x1, y1 } displacement
 
-            double distance1 = DistanceFormula(x2, x1, y2, y1);
-            double distance2 = DistanceFormula(x2, x3, y2, y3);
+            double distance1 = DistanceFormula(x2, y2, x1, y1);
+            double distance2 = DistanceFormula(x2, y2, x3, y3);
 
-            double[] acc = Acceleration(distance1, distance2, mass1, mass3, x1, x3, y1, y3);
-            double angle = acc[1];
-            double[] convVelocity = ToCart(acc[0], acc[1]);
+            double[] acc = Acceleration(distance1, distance2, mass1, mass3, x1, y1, x3, y3, x2, y2);
 
-            velocityX2 += convVelocity[0];
-            velocityY2 += convVelocity[1];
+            velocityX2 += acc[0];
+            velocityY2 += acc[1];
 
             double newVectorX = x2 + (velocityX2 * timeStep);
             double newVectorY = y2 + (velocityY2 * timeStep);
@@ -198,11 +179,11 @@ namespace Gravity
 
             Console.WriteLine(String.Format("2) d = {0}, angle = {1}, velocityX = {2}, velocityY = {3}, velX = {4}, velY = {5}, x = {6}, y = {7}, ({8})\n",
                 Math.Round(distance1).ToString(),
-                (angle * (180 / Math.PI)).ToString(),
+                (acc[2] * (180 / Math.PI)).ToString(),
                 Math.Round(velocityX2),
                 Math.Round(velocityY2),
-                Math.Round(convVelocity[0]),
-                Math.Round(convVelocity[1]),
+                Math.Round(acc[0]),
+                Math.Round(acc[1]),
                 Math.Round(x2),
                 Math.Round(y2), i));
 
@@ -216,15 +197,13 @@ namespace Gravity
         {
             // Handles all required calculations to return a final { x1, y1 } displacement
 
-            double distance1 = DistanceFormula(x3, x1, y3, y1);
-            double distance2 = DistanceFormula(x3, x2, y3, y2);
+            double distance1 = DistanceFormula(x3, y3, x1, y1);
+            double distance2 = DistanceFormula(x3, y3, x2, y2);
 
-            double[] acc = Acceleration(distance1, distance2, mass1, mass2, x1, x2, y1, y2);
-            double angle = acc[1];
-            double[] convVelocity = ToCart(acc[0], acc[1]);
+            double[] acc = Acceleration(distance1, distance2, mass1, mass3, x1, y1, x2, y2, x3, y3);
 
-            velocityX3 += convVelocity[0];
-            velocityY3 += convVelocity[1];
+            velocityX3 += acc[0];
+            velocityY3 += acc[1];
 
             double newVectorX = x3 + (velocityX3 * timeStep);
             double newVectorY = y3 + (velocityY3 * timeStep);
@@ -234,11 +213,11 @@ namespace Gravity
 
             Console.WriteLine(String.Format("3) d = {0}, angle = {1}, velocityX = {2}, velocityY = {3}, velX = {4}, velY = {5}, x = {6}, y = {7}, ({8})\n",
                 Math.Round(distance1).ToString(),
-                (angle * (180 / Math.PI)).ToString(),
+                (acc[2] * (180 / Math.PI)).ToString(),
                 Math.Round(velocityX3),
                 Math.Round(velocityY3),
-                Math.Round(convVelocity[0]),
-                Math.Round(convVelocity[1]),
+                Math.Round(acc[0]),
+                Math.Round(acc[1]),
                 Math.Round(x3),
                 Math.Round(y3), i));
 
