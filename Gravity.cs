@@ -227,35 +227,111 @@ namespace Gravity
             return Task.FromResult(true);
         }
 
-        public void DeclareVariables()
+        public bool DeclareVariables()
         {
             // This grabs all the variables from the external config file and stores them as their corrosponding variables so the code doesn't need to be modified for number changes
             var config = ConfigurationManager.AppSettings;
 
-            timeStep = Double.Parse(config.Get("TimeStep"));
-            repeats = int.Parse(config.Get("Repeats"));
+            if (!double.TryParse(config.Get("TimeStep"), out timeStep)) {
+                Console.WriteLine("Error with TimeStep");
+                return false;
+            };
 
-            mass1 = double.Parse(config.Get("Mass1"));
-            mass2 = double.Parse(config.Get("Mass2"));
-            mass3 = double.Parse(config.Get("Mass3"));
+            if (!int.TryParse(config.Get("Repeats"), out repeats))
+            {
+                Console.WriteLine("Error with Repeats");
+                return false;
+            };
 
-            x1 = double.Parse(config.Get("X1"));
-            y1 = double.Parse(config.Get("Y1"));
+            if (!double.TryParse(config.Get("Mass1"), out mass1))
+            {
+                Console.WriteLine("Error with Mass1");
+                return false;
+            };
 
-            x2 = double.Parse(config.Get("X2"));
-            y2 = double.Parse(config.Get("Y2"));
+            if (!double.TryParse(config.Get("Mass2"), out mass2))
+            {
+                Console.WriteLine("Error with Mass2");
+                return false;
+            };
 
-            x3 = double.Parse(config.Get("X3"));
-            y3 = double.Parse(config.Get("Y3"));
+            if (!double.TryParse(config.Get("Mass3"), out mass3))
+            {
+                Console.WriteLine("Error with Mass3");
+                return false;
+            };
 
-            velocityX = double.Parse(config.Get("InitVelocityX"));
-            velocityY = double.Parse(config.Get("InitVelocityY"));
+            if (!double.TryParse(config.Get("X1"), out x1))
+            {
+                Console.WriteLine("Error with X1");
+                return false;
+            };
 
-            velocityX2 = double.Parse(config.Get("InitVelocityX2"));
-            velocityY2 = double.Parse(config.Get("InitVelocityY2"));
+            if (!double.TryParse(config.Get("Y1"), out y1))
+            {
+                Console.WriteLine("Error with Y1");
+                return false;
+            };
 
-            velocityX3 = double.Parse(config.Get("InitVelocityX3"));
-            velocityY3 = double.Parse(config.Get("InitVelocityY3"));
+            if (!double.TryParse(config.Get("X2"), out x2))
+            {
+                Console.WriteLine("Error with X2");
+                return false;
+            };
+
+            if (!double.TryParse(config.Get("Y2"), out y2))
+            {
+                Console.WriteLine("Error with Y2");
+                return false;
+            };
+
+            if (!double.TryParse(config.Get("X3"), out x3))
+            {
+                Console.WriteLine("Error with X3");
+                return false;
+            };
+
+            if (!double.TryParse(config.Get("Y3"), out y3))
+            {
+                Console.WriteLine("Error with Y3");
+                return false;
+            };
+
+            if (!double.TryParse(config.Get("InitVelocityX"), out velocityX))
+            {
+                Console.WriteLine("Error with InitVelocityX");
+                return false;
+            };
+
+            if (!double.TryParse(config.Get("InitVelocityY"), out velocityY))
+            {
+                Console.WriteLine("Error with InitVelocityY");
+                return false;
+            };
+
+            if (!double.TryParse(config.Get("InitVelocityX2"), out velocityX2))
+            {
+                Console.WriteLine("Error with InitVelocityX2");
+                return false;
+            };
+
+            if (!double.TryParse(config.Get("InitVelocityY2"), out velocityY2))
+            {
+                Console.WriteLine("Error with InitVelocityY2");
+                return false;
+            };
+
+            if (!double.TryParse(config.Get("InitVelocityX3"), out velocityX3))
+            {
+                Console.WriteLine("Error with InitVelocityX3");
+                return false;
+            };
+
+            if (!double.TryParse(config.Get("InitVelocityY3"), out velocityY3))
+            {
+                Console.WriteLine("Error with InitVelocityY3");
+                return false;
+            };
 
             // Used for storing the entire session's x and y coordinates to draw a graph
             dataX = new double[repeats];
@@ -267,7 +343,7 @@ namespace Gravity
             dataX3 = new double[repeats];
             dataY3 = new double[repeats];
 
-            Console.WriteLine(x1);
+            return true;
         }
 
         public void Main2() 
@@ -289,8 +365,23 @@ namespace Gravity
         static void Main(string[] args)
         {
             Gravity grav = new Gravity();
-            grav.DeclareVariables();
+            if (!grav.DeclareVariables())
+            {
+                throw new VariableInitialisationException();
+            }
             grav.Main2();
         }
+    }
+
+    public class VariableInitialisationException : Exception
+    {
+        public VariableInitialisationException()
+        { }
+
+        public VariableInitialisationException(string message)
+            : base(message) { }
+
+        public VariableInitialisationException(string message, Exception inner)
+            : base(message, inner) { }
     }
 }
