@@ -50,6 +50,39 @@ namespace Gravity
         double[] dataX3;
         double[] dataY3;
 
+
+        static double Mod (double a, double b)
+        {
+            double aModB = a - (b * Math.Floor(a / b));
+
+            return aModB;
+        }
+
+        static double ArcCos (double n)
+        {
+            if (n < -1 || n > 1)
+            {
+                n = Mod(n, 2);
+                n -= 1;
+            }
+
+            double aCos = Math.Acos(n);
+
+            return aCos;
+        }
+
+        static double ArcSin(double n)
+        {
+            if (n < -1 || n > 1)
+            {
+                n = Mod(n, 2);
+                n -= 1;
+            }
+
+            double aSin = Math.Asin(n);
+
+            return aSin;
+        }
         static double[] ToCart(double r, double theta)
         {
             // Converts { r, theta } vectors and converts them into { x, y } vectors
@@ -79,6 +112,14 @@ namespace Gravity
             return dotProduct;
         }
 
+        static double FinalAngle(double mag1, double mag2, double angle)
+        {
+            double finalAngle1 = (mag1 * Math.Sin(angle) / mag2);
+            double finalAngle = ArcSin(finalAngle1);
+
+            return finalAngle;
+        }
+
         static double AngleVector(double x1, double y1, double x2, double y2)
         {
             double dotProduct = DotProduct(x1, y1, x2, y2);
@@ -86,7 +127,8 @@ namespace Gravity
             double magU = Magnitude(x1, y1);
             double magV = Magnitude(x2, y2);
 
-            double angle = Math.Acos(dotProduct / (magU * magV));
+            double dot = (dotProduct / (magU * magV));
+            double angle = ArcCos(dot);
 
             return angle;
         }
@@ -100,32 +142,35 @@ namespace Gravity
         {
             double acc1 = G * (mass1 / Math.Pow(distance1, 2));
             double acc2 = G * (mass2 / Math.Pow(distance2, 2));
-            
+
+            double angle1 = AngleVector(u1, u2, w1, w2);
+            double angle2 = AngleVector(v1, v2, w1, w2);
+
             double angle = AngleVector(u1, u2, v1, v2);
+            double acc = VectorAddition(acc1, acc2, angle2 - angle1);
 
-            double acc = VectorAddition(acc1, acc2, angle);
+            // ERROR IS HERE
+            double finalAngle = FinalAngle(acc2, acc, angle);
 
-            double[] convVelocity = ToCart(acc, angle);
+            double angleMinus = AngleVector(u1, u2, 1, 0);
 
-            double[] returns = { convVelocity[0], convVelocity[1], angle };
+            double finalAngle2 = Mod(angleMinus - finalAngle, (Math.PI * 2));
+
+            double[] convVelocity = ToCart(acc, finalAngle2);
+
+            double[] returns = { convVelocity[0], convVelocity[1], finalAngle2 };
 
             return returns;
         }
 
-        async Task<bool> MainLoop()
+        void MainLoop()
         {
             for (int i = 0; i < repeats; i++)
             {
-                Task<bool> calc1 = MainCalc1(i);
-                Task<bool> calc2 = MainCalc2(i);
-                Task<bool> calc3 = MainCalc3(i);
-
-                await Task.WhenAll(calc1, calc2, calc3);
+                MainCalc1(i);
             }
-
-            return true;
         }
-        Task<bool> MainCalc1(int i)
+        void MainCalc1(int i)
         {
             // Handles all required calculations to return a final { x1, y1 } displacement
 
@@ -156,75 +201,6 @@ namespace Gravity
             dataX[i] = x1;
             dataY[i] = y1;
 
-            return Task.FromResult(true);
-        }
-
-        Task<bool> MainCalc2(int i)
-        {
-            // Handles all required calculations to return a final { x1, y1 } displacement
-
-            double distance1 = DistanceFormula(x2, y2, x1, y1);
-            double distance2 = DistanceFormula(x2, y2, x3, y3);
-
-            double[] acc = Acceleration(distance1, distance2, mass1, mass3, x1, y1, x3, y3, x2, y2);
-
-            velocityX2 += acc[0];
-            velocityY2 += acc[1];
-
-            double newVectorX = x2 + (velocityX2 * timeStep);
-            double newVectorY = y2 + (velocityY2 * timeStep);
-
-            x2 = newVectorX;
-            y2 = newVectorY;
-
-            Console.WriteLine(String.Format("2) d = {0}, angle = {1}, velocityX = {2}, velocityY = {3}, velX = {4}, velY = {5}, x = {6}, y = {7}, ({8})\n",
-                Math.Round(distance1).ToString(),
-                (acc[2] * (180 / Math.PI)).ToString(),
-                Math.Round(velocityX2),
-                Math.Round(velocityY2),
-                Math.Round(acc[0]),
-                Math.Round(acc[1]),
-                Math.Round(x2),
-                Math.Round(y2), i));
-
-            dataX2[i] = x2;
-            dataY2[i] = y2;
-
-            return Task.FromResult(true);
-        }
-
-        Task<bool> MainCalc3(int i)
-        {
-            // Handles all required calculations to return a final { x1, y1 } displacement
-
-            double distance1 = DistanceFormula(x3, y3, x1, y1);
-            double distance2 = DistanceFormula(x3, y3, x2, y2);
-
-            double[] acc = Acceleration(distance1, distance2, mass1, mass3, x1, y1, x2, y2, x3, y3);
-
-            velocityX3 += acc[0];
-            velocityY3 += acc[1];
-
-            double newVectorX = x3 + (velocityX3 * timeStep);
-            double newVectorY = y3 + (velocityY3 * timeStep);
-
-            x3 = newVectorX;
-            y3 = newVectorY;
-
-            Console.WriteLine(String.Format("3) d = {0}, angle = {1}, velocityX = {2}, velocityY = {3}, velX = {4}, velY = {5}, x = {6}, y = {7}, ({8})\n",
-                Math.Round(distance1).ToString(),
-                (acc[2] * (180 / Math.PI)).ToString(),
-                Math.Round(velocityX3),
-                Math.Round(velocityY3),
-                Math.Round(acc[0]),
-                Math.Round(acc[1]),
-                Math.Round(x3),
-                Math.Round(y3), i));
-
-            dataX3[i] = x3;
-            dataY3[i] = y3;
-
-            return Task.FromResult(true);
         }
 
         public bool DeclareVariables()
@@ -337,11 +313,11 @@ namespace Gravity
             dataX = new double[repeats];
             dataY = new double[repeats];
 
-            dataX2 = new double[repeats];
-            dataY2 = new double[repeats];
+            //dataX2 = new double[repeats];
+            //dataY2 = new double[repeats];
 
-            dataX3 = new double[repeats];
-            dataY3 = new double[repeats];
+            //dataX3 = new double[repeats];
+            //dataY3 = new double[repeats];
 
             return true;
         }
@@ -351,10 +327,16 @@ namespace Gravity
 
             MainLoop();
 
+            double[] dataX2 = { x2 };
+            double[] dataY2 = { y2 };
+
+            double[] dataX3 = { x3 };
+            double[] dataY3 = { y3 };
+
             var plt = new ScottPlot.Plot(1920, 1920);
             plt.AddScatter(dataX, dataY);
             plt.AddScatter(dataX2, dataY2);
-            plt.AddScatter(dataX3, dataX3);
+            plt.AddScatter(dataX3, dataY3);
             plt.SaveFig("DisplacementGraph.png");
 
             var directory = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
