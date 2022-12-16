@@ -23,7 +23,7 @@
 		<add key="InitVelocityX2" value="0" />
 		<add key="InitVelocityY2" value="0" />
 
-		<add key="InitVelocityX3" value=0" />
+		<add key="InitVelocityX3" value="0" />
 		<add key="InitVelocityY3" value="0" />
 	</appSettings>
 </configuration>
