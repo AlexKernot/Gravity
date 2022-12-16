@@ -2,11 +2,14 @@
 public class PlanetClass
 {
     private long mass = 0;
-    private int positionX = 0;
-    private int positionY = 0;
+    private double positionX = 0;
+    private double positionY = 0;
 
-    private int velocityX = 0;
-    private int velocityY = 0;
+    private double velocityX = 0;
+    private double velocityY = 0;
+
+    private double[] dataX = new double[Globals.repeats];
+    private double[] dataY = new double[Globals.repeats];
 
     public long GetMass()
     {
@@ -19,47 +22,68 @@ public class PlanetClass
         return true;
     }
 
-    public int GetPositionX()
+    public double GetPositionX()
     {
         return positionX;
     }
 
-    public bool SetPositionX(int setPositionX)
+    public bool SetPositionX(double setPositionX)
     {
         positionX = setPositionX;
         return true;
     }
 
-    public int GetPositionY()
+    public double GetPositionY()
     {
         return positionY;
     }
 
-    public bool SetPositionY(int setPositionY)
+    public bool SetPositionY(double setPositionY)
     {
         positionY = setPositionY;
         return true;
     }
 
-    public int GetVelocityX()
+    public double GetVelocityX()
     {
         return velocityX;
     }
 
-    public bool SetVelocityX(int setVelocityX)
+    public bool SetVelocityX(double setVelocityX)
     {
         velocityX = setVelocityX;
         return true;
     }
 
-    public int GetVelocityY()
+    public double GetVelocityY()
     {
         return velocityY;
     }
 
-    public bool SetVelocityY(int setVelocityY)
+    public bool SetVelocityY(double setVelocityY)
     {
         velocityY = setVelocityY;
+        return true;
+    }
+
+    public double[] GetDataX()
+    {
+        return dataX;
+    }
+
+    // Automatically assumes it's at timestep i.
+    public bool SetDataX(double value) {
+        dataX[Globals.GetTime()] = value;
+        return true;
+    }
+    public double[] GetDataY()
+    {
+        return dataY;
+    }
+
+    public bool SetDataY(double value)
+    {
+        dataY[Globals.GetTime()] = value;
         return true;
     }
 }

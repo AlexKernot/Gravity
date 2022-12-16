@@ -3,24 +3,53 @@ using System.Diagnostics;
 using System.Reflection;
 
 namespace Gravity;
+
+public static class Globals
+{
+    public const double gravitationalConstant = 0.00000000000667408;
+
+    public const int numberOfPlanets = 2;
+
+    public const double timeStep = 0.5f;
+    public const int repeats = 100;
+
+    private static int currentRelativeTime = 0;
+
+    public static int GetTime()
+    {
+        return currentRelativeTime;
+    }
+
+    public static bool IncrementTime()
+    {
+        currentRelativeTime++;
+        return true;
+    }
+}
+
 class Gravity
 {
-    // Gravitatonal constant
-    const double G = 0.00000000000667408;
-
-    const int numberOfPlanets = 3;
-
-    const double timeStep = 0.5f;
-    const int repeats = 100;
-
-    void Main()
+    static void Main()
     {
-        PlanetClass[] planet = new PlanetClass[numberOfPlanets];
-        if (DeclareVariables())
+        PlanetClass[] planet = new PlanetClass[Globals.numberOfPlanets];
+        for (int i = 0; i < Globals.repeats; i++)
         {
-            throw new VariableInitialisationException();
+            CalculateStep(planet);
         }
-        Main2();
+
+        var plt = new ScottPlot.Plot(1920, 1920);
+
+        for (int i = 0; i > Globals.numberOfPlanets; i++)
+        {
+            plt.AddScatter(planet[i].GetDataX(), planet[i].GetDataY());
+        }
+
+        plt.SaveFig("DisplacementGraph.png");
+
+        // Opens the saved image
+        //var directory = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+        //Process.Start(directory + @"\DisplacementGraph.png");
+
     }
 
     static double Mod (double a, double b)
@@ -32,48 +61,63 @@ class Gravity
 
     static double ArcCos (double n)
     {
+        // Using the formula ((n - 1) % 2) - 1, numbers for ArcCos and ArcSin can be calculated outside of the domain {n: -1 < n < 1 }
         if (n < -1 || n > 1)
         {
+            n--;
             n = Mod(n, 2);
-            n -= 1;
+            n--;
         }
 
-        double aCos = Math.Acos(n);
+        double arcCos = Math.Acos(n);
 
-        return aCos;
+        return arcCos;
     }
 
     static double ArcSin(double n)
     {
         if (n < -1 || n > 1)
         {
+            n--;
             n = Mod(n, 2);
-            n -= 1;
+            n--;
         }
 
         double aSin = Math.Asin(n);
 
         return aSin;
     }
-    static double[] ToCart(double r, double theta)
+    static double[] ToCart(double magnitude, double angle)
     {
         // Converts { r, theta } vectors and converts them into { x, y } vectors
         double[] xy = {
-            r * (Math.Cos(theta)),
-            r * (Math.Sin(theta)) };
+            magnitude * (Math.Cos(angle)),
+            magnitude * (Math.Sin(angle)) };
 
         return xy;
     }
-    static double VectorAddition (double b, double c, double theta)
+    static double VectorAddition (double vector1, double vetor2, double angleBetween)
     {
-        double a = Math.Sqrt((Math.Pow(b, 2) * Math.Pow(c, 2)) - (2 * b * c * Math.Cos(theta)));
+        double a = Math.Pow(vector1, 2);
+
+        a *= Math.Pow(vetor2, 2);
+
+        a -= 2 * vector1 * vetor2 * Math.Cos(angleBetween);
+
+        a = Math.Sqrt(a);
 
         return a;
     }
 
     static double Magnitude (double a, double b)
     {
-        return Math.Sqrt(Math.Pow(a, 2) + Math.Pow(b, 2));
+        double magnitude = Math.Pow(a, 2);
+
+        magnitude += Math.Pow(b, 2);
+
+        magnitude = Math.Sqrt(magnitude);
+
+        return magnitude;
     }
 
     static double DotProduct (double u1, double u2, double v1, double v2)
@@ -110,221 +154,9 @@ class Gravity
         return Math.Sqrt(Math.Pow(x2 - x1, 2) + Math.Pow(y2 - y1, 2));
     }
 
-    static double[] Acceleration(double distance1, double distance2, double mass1, double mass2, double u1, double u2, double v1, double v2, double w1, double w2)
+    static bool CalculateStep(PlanetClass[] planet)
     {
-        double acc1 = G * (mass1 / Math.Pow(distance1, 2));
-        double acc2 = G * (mass2 / Math.Pow(distance2, 2));
-
-        double angle1 = AngleVector(u1, u2, w1, w2);
-        double angle2 = AngleVector(v1, v2, w1, w2);
-
-        double angle = AngleVector(u1, u2, v1, v2);
-        double acc = VectorAddition(acc1, acc2, angle2 - angle1);
-
-        // ERROR IS HERE
-        double finalAngle = FinalAngle(acc2, acc, angle);
-
-        double angleMinus = AngleVector(u1, u2, 1, 0);
-
-        double finalAngle2 = Mod(angleMinus - finalAngle, (Math.PI * 2));
-
-        double[] convVelocity = ToCart(acc, finalAngle2);
-
-        double[] returns = { convVelocity[0], convVelocity[1], finalAngle2 };
-
-        return returns;
-    }
-
-    void MainLoop()
-    {
-        for (int i = 0; i < repeats; i++)
-        {
-            MainCalc1(i);
-        }
-    }
-    void MainCalc1(int i)
-    {
-        // Handles all required calculations to return a final { x1, y1 } displacement
-
-        double distance1 = DistanceFormula(x1, y1, x2, y2);
-        double distance2 = DistanceFormula(x1, y1, x3, y3);
-
-        double[] acc = Acceleration(distance1, distance2, mass2, mass3, x2, y2, x3, y3, x1, y1);
-
-        velocityX += acc[0];
-        velocityY += acc[1];
-
-        double newVectorX = x1 + (velocityX * timeStep);
-        double newVectorY = y1 + (velocityY * timeStep);
-
-        x1 = newVectorX;
-        y1 = newVectorY;
-
-        Console.WriteLine(String.Format("1) d = {0}, angle = {1}, velocityX = {2}, velocityY = {3}, velX = {4}, velY = {5}, x = {6}, y = {7}, ({8})\n",
-            Math.Round(distance1).ToString(),
-            (acc[2] * (180 / Math.PI)).ToString(),
-            Math.Round(velocityX),
-            Math.Round(velocityY),
-            Math.Round(acc[0]),
-            Math.Round(acc[1]),
-            Math.Round(x1),
-            Math.Round(y1), i));
-
-        dataX[i] = x1;
-        dataY[i] = y1;
-
-    }
-
-    public bool DeclareVariables()
-    {
-        // This grabs all the variables from the external config file and stores them as their corrosponding variables so the code doesn't need to be modified for number changes
-        var config = ConfigurationManager.AppSettings;
-
-        if (!double.TryParse(config.Get("TimeStep"), out timeStep)) {
-            Console.WriteLine("Error with TimeStep");
-            return false;
-        };
-
-        if (!int.TryParse(config.Get("Repeats"), out repeats))
-        {
-            Console.WriteLine("Error with Repeats");
-            return false;
-        };
-
-        if (!double.TryParse(config.Get("Mass1"), out mass1))
-        {
-            Console.WriteLine("Error with Mass1");
-            return false;
-        };
-
-        if (!double.TryParse(config.Get("Mass2"), out mass2))
-        {
-            Console.WriteLine("Error with Mass2");
-            return false;
-        };
-
-        if (!double.TryParse(config.Get("Mass3"), out mass3))
-        {
-            Console.WriteLine("Error with Mass3");
-            return false;
-        };
-
-        if (!double.TryParse(config.Get("X1"), out x1))
-        {
-            Console.WriteLine("Error with X1");
-            return false;
-        };
-
-        if (!double.TryParse(config.Get("Y1"), out y1))
-        {
-            Console.WriteLine("Error with Y1");
-            return false;
-        };
-
-        if (!double.TryParse(config.Get("X2"), out x2))
-        {
-            Console.WriteLine("Error with X2");
-            return false;
-        };
-
-        if (!double.TryParse(config.Get("Y2"), out y2))
-        {
-            Console.WriteLine("Error with Y2");
-            return false;
-        };
-
-        if (!double.TryParse(config.Get("X3"), out x3))
-        {
-            Console.WriteLine("Error with X3");
-            return false;
-        };
-
-        if (!double.TryParse(config.Get("Y3"), out y3))
-        {
-            Console.WriteLine("Error with Y3");
-            return false;
-        };
-
-        if (!double.TryParse(config.Get("InitVelocityX"), out velocityX))
-        {
-            Console.WriteLine("Error with InitVelocityX");
-            return false;
-        };
-
-        if (!double.TryParse(config.Get("InitVelocityY"), out velocityY))
-        {
-            Console.WriteLine("Error with InitVelocityY");
-            return false;
-        };
-
-        if (!double.TryParse(config.Get("InitVelocityX2"), out velocityX2))
-        {
-            Console.WriteLine("Error with InitVelocityX2");
-            return false;
-        };
-
-        if (!double.TryParse(config.Get("InitVelocityY2"), out velocityY2))
-        {
-            Console.WriteLine("Error with InitVelocityY2");
-            return false;
-        };
-
-        if (!double.TryParse(config.Get("InitVelocityX3"), out velocityX3))
-        {
-            Console.WriteLine("Error with InitVelocityX3");
-            return false;
-        };
-
-        if (!double.TryParse(config.Get("InitVelocityY3"), out velocityY3))
-        {
-            Console.WriteLine("Error with InitVelocityY3");
-            return false;
-        };
-
-        // Used for storing the entire session's x and y coordinates to draw a graph
-        dataX = new double[repeats];
-        dataY = new double[repeats];
-
-        //dataX2 = new double[repeats];
-        //dataY2 = new double[repeats];
-
-        //dataX3 = new double[repeats];
-        //dataY3 = new double[repeats];
-
+        Console.WriteLine("This program doesn't do anything yet.");
         return true;
     }
-
-    public void Main2() 
-    {
-
-        MainLoop();
-
-        double[] dataX2 = { x2 };
-        double[] dataY2 = { y2 };
-
-        double[] dataX3 = { x3 };
-        double[] dataY3 = { y3 };
-
-        var plt = new ScottPlot.Plot(1920, 1920);
-        plt.AddScatter(dataX, dataY);
-        plt.AddScatter(dataX2, dataY2);
-        plt.AddScatter(dataX3, dataY3);
-        plt.SaveFig("DisplacementGraph.png");
-
-        var directory = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-
-        Process.Start(directory + @"\DisplacementGraph.png");
-    }
-}
-
-public class VariableInitialisationException : Exception
-{
-    public VariableInitialisationException()
-    { }
-
-    public VariableInitialisationException(string message)
-        : base(message) { }
-
-    public VariableInitialisationException(string message, Exception inner)
-        : base(message, inner) { }
 }
