@@ -1,4 +1,6 @@
-﻿namespace Gravity;
+﻿using System;
+
+namespace Gravity;
 public class PlanetClass
 {
     private long mass = 0;
@@ -11,6 +13,29 @@ public class PlanetClass
     private double[] dataX = new double[Globals.repeats];
     private double[] dataY = new double[Globals.repeats];
 
+    public bool UpdatePosition()
+    {
+        positionX += velocityX * Globals.timeStep;
+        positionY += velocityY * Globals.timeStep;
+
+        if (Double.IsNaN(positionX) || Double.IsNaN(positionY))
+        {
+            return false;
+        }
+
+        dataX[Globals.GetTime()] = positionX;
+        dataY[Globals.GetTime()] = positionY;
+
+        return true;
+    }
+
+    public bool AddVelocity(double changeVelocityX, double changeVelocityY)
+    {
+        velocityX += changeVelocityX;
+        velocityY += changeVelocityY;
+
+        return true;
+    }
     public long GetMass()
     {
         return mass;

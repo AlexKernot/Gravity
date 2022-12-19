@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Reflection;
+using System.Threading.Tasks.Dataflow;
 
 namespace Gravity;
 
 public static class Globals
 {
-    public const double gravitationalConstant = 0.00000000000667408;
+    public const double gravitationalConstant = 0.00000667408;
 
-    public const int numberOfPlanets = 2;
+    public const int numberOfPlanets = 4;
 
-    public const double timeStep = 0.5f;
-    public const int repeats = 100;
+    public const double timeStep = 1;
+    public const int repeats = 650;
 
     private static int currentRelativeTime = 0;
 
@@ -29,63 +30,48 @@ public static class Globals
 
 class Gravity
 {
+    private const long massOfEarth = 59720000000000;
+
     static void Main()
     {
         PlanetClass[] planet = new PlanetClass[Globals.numberOfPlanets];
+
+        for (int i = 0; i < Globals.numberOfPlanets; i++)
+        {
+            planet[i] = new PlanetClass();
+        }
+
+        planet[0].SetMass(massOfEarth);
+        planet[1].SetMass(massOfEarth);
+
+
+        planet[0].SetPositionX(32000);
+        planet[1].SetPositionX(-32000);
+        planet[0].SetPositionY(32000);
+        planet[1].SetPositionY(-32000);
+        planet[2].SetMass(massOfEarth);
+        planet[2].SetPositionX(-32000);
+        planet[2].SetPositionY(32000);
+        planet[3].SetMass(massOfEarth);
+        planet[3].SetPositionX(32000);
+        planet[3].SetPositionY(-32000);
+
+
         for (int i = 0; i < Globals.repeats; i++)
         {
-            CalculateStep(planet);
+            planet = CalculateStep(planet);
+            Globals.IncrementTime();
         }
 
         var plt = new ScottPlot.Plot(1920, 1920);
 
-        for (int i = 0; i > Globals.numberOfPlanets; i++)
+        for (int i = 0; i < Globals.numberOfPlanets; i++)
         {
             plt.AddScatter(planet[i].GetDataX(), planet[i].GetDataY());
         }
 
         plt.SaveFig("DisplacementGraph.png");
 
-        // Opens the saved image
-        //var directory = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-        //Process.Start(directory + @"\DisplacementGraph.png");
-
-    }
-
-    static double Mod (double a, double b)
-    {
-        double aModB = a - (b * Math.Floor(a / b));
-
-        return aModB;
-    }
-
-    static double ArcCos (double n)
-    {
-        // Using the formula ((n - 1) % 2) - 1, numbers for ArcCos and ArcSin can be calculated outside of the domain {n: -1 < n < 1 }
-        if (n < -1 || n > 1)
-        {
-            n--;
-            n = Mod(n, 2);
-            n--;
-        }
-
-        double arcCos = Math.Acos(n);
-
-        return arcCos;
-    }
-
-    static double ArcSin(double n)
-    {
-        if (n < -1 || n > 1)
-        {
-            n--;
-            n = Mod(n, 2);
-            n--;
-        }
-
-        double aSin = Math.Asin(n);
-
-        return aSin;
     }
     static double[] ToCart(double magnitude, double angle)
     {
@@ -96,67 +82,87 @@ class Gravity
 
         return xy;
     }
-    static double VectorAddition (double vector1, double vetor2, double angleBetween)
-    {
-        double a = Math.Pow(vector1, 2);
-
-        a *= Math.Pow(vetor2, 2);
-
-        a -= 2 * vector1 * vetor2 * Math.Cos(angleBetween);
-
-        a = Math.Sqrt(a);
-
-        return a;
-    }
-
-    static double Magnitude (double a, double b)
-    {
-        double magnitude = Math.Pow(a, 2);
-
-        magnitude += Math.Pow(b, 2);
-
-        magnitude = Math.Sqrt(magnitude);
-
-        return magnitude;
-    }
-
-    static double DotProduct (double u1, double u2, double v1, double v2)
+    static double AngleVector(double point1X, double point1Y, double point2X, double point2Y)
     {
 
-        double dotProduct = ((u1 * v1) + (u2 * v2));
+        double vectorX = (point2X - point1X);
+        double vectorY = (point2Y - point1Y);
 
-        return dotProduct;
-    }
+        // double magnitudeVector = Magnitude(vectorX, vectorY);
 
-    static double FinalAngle(double mag1, double mag2, double angle)
-    {
-        double finalAngle1 = (mag1 * Math.Sin(angle) / mag2);
-        double finalAngle = ArcSin(finalAngle1);
+        // double cosA = vectorY / magnitudeVector;
+        double angle = Math.Atan2(vectorX, vectorY);
 
-        return finalAngle;
-    }
-
-    static double AngleVector(double x1, double y1, double x2, double y2)
-    {
-        double dotProduct = DotProduct(x1, y1, x2, y2);
-
-        double magU = Magnitude(x1, y1);
-        double magV = Magnitude(x2, y2);
-
-        double dot = (dotProduct / (magU * magV));
-        double angle = ArcCos(dot);
+        angle = Math.PI / 2 - angle;
 
         return angle;
     }
     static double DistanceFormula(double x1, double y1, double x2, double y2)
     {
         // Calculated the distance in cartesian coordinates via the following formula: sqrt( (x2-x1)^2 + (y2-y1)^2 )
-        return Math.Sqrt(Math.Pow(x2 - x1, 2) + Math.Pow(y2 - y1, 2));
+        double x = x2 - x1;
+        double y = y2 - y1;
+
+        return Math.Sqrt(Math.Pow(x, 2) + Math.Pow(y, 2));
     }
 
-    static bool CalculateStep(PlanetClass[] planet)
+    static double ForceDueToGravity(double distanceBetween, double planet1Mass, double planet2Mass)
     {
-        Console.WriteLine("This program doesn't do anything yet.");
-        return true;
+        double gravity = planet1Mass * planet2Mass;
+        gravity /= Math.Pow(distanceBetween, 2);
+        gravity *= Globals.gravitationalConstant;
+
+        return gravity;
+    }
+
+    static PlanetClass[] CalculateStep(PlanetClass[] planet)
+    {
+        // number of planets - 1 because by the time the last planet is reached, its interaction has already been calculated with every planet
+        for (int i = 0; i < Globals.numberOfPlanets - 1; i++)
+        {
+            PlanetClass planet1 = planet[i];
+
+            double planet1X = planet1.GetPositionX();
+            double planet1Y = planet1.GetPositionY();
+            double planet1Mass = planet1.GetMass();
+
+            // This is broken up into an unessecary amount of variables because I need to make sure all the math happens in a very specific way
+            // j = i + 1 finds the next planet that hasn't been calculated already
+            for (int j = i + 1; j < Globals.numberOfPlanets; j++)
+            {
+                PlanetClass planet2 = planet[j];
+
+                double planet2X = planet2.GetPositionX();
+                double planet2Y = planet2.GetPositionY();
+                double planet2Mass = planet2.GetMass();
+
+                double distanceBetween = DistanceFormula(planet1X, planet1Y, planet2X, planet2Y);
+                double forceBetween = ForceDueToGravity(distanceBetween, planet1Mass, planet2Mass);
+                double angleBetween = AngleVector(planet1X, planet1Y, planet2X, planet2Y);
+
+                double changeAccelerationPlanet1 = forceBetween / planet1Mass;
+                double changeAccelerationPlanet2 = forceBetween / planet2Mass;
+
+                double changeMagnitudeOfVelocityPlanet1 = changeAccelerationPlanet1 / Globals.timeStep;
+                double changeMagnitudeOfVelocityPlanet2 = changeAccelerationPlanet2/ Globals.timeStep;
+
+                double[] changeVelocityVectorPlanet1 = ToCart(changeMagnitudeOfVelocityPlanet1, angleBetween);
+
+                // Angle between planet 2 and planet 1 is the same as 1 and 2 but in the opposite direction
+                double[] changeVelocityVectorPlanet2 = ToCart(changeMagnitudeOfVelocityPlanet2, angleBetween + Math.PI);
+
+                planet1.AddVelocity(changeVelocityVectorPlanet1[0], changeVelocityVectorPlanet1[1]);
+                planet2.AddVelocity(changeVelocityVectorPlanet2[0], changeVelocityVectorPlanet2[1]);
+
+                // Once finished with the planet
+                planet[j] = planet2;
+            }
+            planet[i] = planet1;
+        }
+        for (int i = 0; i < Globals.numberOfPlanets; i++)
+        {
+            planet[i].UpdatePosition();
+        }
+        return planet;
     }
 }
